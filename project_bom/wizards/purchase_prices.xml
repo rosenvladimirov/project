@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_bom_get_purchase_price_form" model="ir.ui.view">
+            <field name="name">Get purchase prices</field>
+            <field name="model">bom.get.purchase.price</field>
+            <field name="arch" type="xml">
+                <form string="Get price">
+                    <group>
+                        <group>
+                            <field name="product_tmpl_id" readonly="1" force_save="1"/>
+                            <field name="product_uom" readonly="1" force_save="1"/>
+                        </group>
+                        <group>
+                            <field name="standard_price"/>
+                            <field name="use_price"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Prices from Purchases">
+                            <field name="price_line" nolabel="1">
+                                <tree string="Purchase prices" editable="top" create="0" delete="0">
+                                    <field name="purchase_price_id" invisible="1"/>
+                                    <field name="use_price"/>
+                                    <field name="product_tmpl_id" invisible="1"/>
+                                    <field name="price_unit"/>
+                                    <field name="currency_id" readonly="1" force_save="1"/>
+                                    <field name="product_uom" readonly="1" force_save="1"/>
+                                    <field name="purchase_line_id" readonly="1" force_save="1"/>
+                                </tree>
+                                <form string="Purchase prices">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="purchase_price_id" invisible="1"/>
+                                                <field name="product_tmpl_id" readonly="1" force_save="1"/>
+                                                <field name="product_uom" readonly="1" force_save="1"/>
+                                            </group>
+                                            <group>
+                                                <field name="use_price"/>
+                                                <field name="price_unit"/>
+                                                <field name="currency_id" readonly="1" force_save="1"/>
+                                                <field name="purchase_line_id" readonly="1" force_save="1"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Prices from Vendor price lists">
+                            <field name="supp_price_line" nolabel="1">
+                                <tree string="Purchase prices" editable="top" create="0" delete="0">
+                                    <field name="purchase_price_id" invisible="1"/>
+                                    <field name="name" readonly="1" force_save="1"/>
+                                    <field name="use_price"/>
+                                    <field name="product_tmpl_id" invisible="1"/>
+                                    <field name="price_unit"/>
+                                    <field name="product_uom" readonly="1" force_save="1"/>
+                                    <field name="currency_id" readonly="1" force_save="1"/>
+                                    <field name="date_start" readonly="1" force_save="1"/>
+                                    <field name="date_end" readonly="1" force_save="1"/>
+                                    <field name="supp_info_id" invisible="1"/>
+                                </tree>
+                                <form string="Purchase prices">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="purchase_price_id" invisible="1"/>
+                                                <field name="name" readonly="1" force_save="1"/>
+                                                <field name="product_tmpl_id" readonly="1" force_save="1"/>
+                                                <field name="product_uom" readonly="1" force_save="1"/>
+                                            </group>
+                                            <group>
+                                                <field name="use_price"/>
+                                                <field name="product_uom" readonly="1" force_save="1"/>
+                                                <field name="currency_id" readonly="1" force_save="1"/>
+                                                <field name="date_start" readonly="1" force_save="1"/>
+                                                <field name="date_end" readonly="1" force_save="1"/>
+                                                <field name="supp_info_id" readonly="1" force_save="1"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                    </notebook>
+                    <footer>
+                        <button name="action_use_price" string="Get price" type="object" class="oe_highlight"/>
+                        <button string="Cancel" class="oe_link" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="act_open_bom_get_purchase_price" model="ir.actions.act_window">
+            <field name="name">Get price</field>
+            <field name="res_model">bom.get.purchase.price</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_bom_get_purchase_price_form"/>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo>

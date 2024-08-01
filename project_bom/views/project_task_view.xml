@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_task_form_mrp_project" model="ir.ui.view">
+        <field name="name">project.task.form.mrp.project</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project_task_material_stock.view_project_task_form_material"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='materials']" position="inside">
+                <field name="mrp_product_tmpl_id"/>
+                <field name="mrp_product_id"/>
+                <field name="project_mrp_ids" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_project_task_form_mrp_project_bom" model="ir.ui.view">
+        <field name="name">project.task.form.material.project.mrp.bom</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="id" invisible="1"/>
+                <button class="oe_stat_button" icon="fa-thumb-tack" type="object"
+                        name="action_create_mrp_bom"
+                        attrs="{'invisible': [('project_mrp_count', '!=', 0)]}">
+                    <field name="project_mrp_count" widget="statinfo" string="Project Bom's"/>
+                </button>
+                <button name="%(project_bom.project_mrp_bom_form_action)d"
+                        string="View Project Bom"
+                        type="action"
+                        icon="fa-files-o"
+                        context="{'search_default_task_id': id}"
+                        attrs="{'invisible': [('project_mrp_count', '=', 0)]}">
+                        <field name="project_mrp_count" widget="statinfo" string="Project Bom's"/>
+                </button>
+            </xpath>
+<!--            <xpath expr="//field[@name='user_id']" position="after">-->
+<!--                <field name="employee_id" options="{'no_quick_create': True,'no_create_edit': True}"/>-->
+<!--            </xpath>-->
+<!--            <xpath expr="//field[@name='tag_ids']" position="after">-->
+<!--                <field name="workorder_id" options="{'no_quick_create': True,'no_create_edit': True}"/>-->
+<!--            </xpath>-->
+        </field>
+    </record>
+</odoo>

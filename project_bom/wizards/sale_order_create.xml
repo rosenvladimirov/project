@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_bom_sale_order_form" model="ir.ui.view">
+            <field name="name">Create Quotation</field>
+            <field name="model">bom.sale.order</field>
+            <field name="arch" type="xml">
+                <form string="Get price">
+                    <group>
+                        <field name="project_bom_id" invisible="1" widget="many2many_tags" nolabel="1"/>
+                        <group>
+                            <field name="sale_order_id"/>
+                            <field name="date"/>
+                            <field name="partner_id"/>
+                            <field name="partner_shipping_id"/>
+                            <field name="currency_id"/>
+                        </group>
+                        <group>
+                            <field name="product_uom_qty"/>
+                            <field name="save_coefficient"/>
+                            <field name="product_set_auto"/>
+                            <field name="product_set_id" attrs="{'invisible': [('product_set_auto', '=', True)]}"/>
+                        </group>
+                    </group>
+                    <field name="project_sale_lines" nolabel="1" attrs="{'readonly': [('sale_order_id', '=', [])]}">
+                        <tree string="Offer lines" editable="top" create="0" delete="0">
+                            <field name="bom_sale_order_id" invisible="1"/>
+                            <field name="project_bom_line_id" invisible="1"/>
+                            <field name="mrp_product_tmpl_id" invisible="1"/>
+                            <field name="product_tmpl_id" readonly="1" force_save="1"/>
+                            <field name="product_id" domain="[('product_tmpl_id', '=', product_tmpl_id)]"/>
+                            <field name="discount"/>
+                            <field name="oring_product_uom_qty" invisible="1"/>
+                            <field name="product_uom_qty"/>
+                            <field name="product_uom" readonly="1" force_save="1"/>
+                            <field name="oring_price_unit" readonly="1" force_save="1"/>
+                            <field name="price_unit"/>
+                            <field name="currency_id" readonly="1" force_save="1"/>
+                            <field name="price_tax" readonly="1"/>
+                            <field name="price_subtotal"/>
+                            <field name="tax_id" widget="many2many_tags"/>
+                        </tree>
+                        <form string="Purchase prices">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="bom_sale_order_id" invisible="1"/>
+                                        <field name="project_bom_line_id" invisible="1"/>
+                                        <field name="product_tmpl_id" readonly="1" force_save="1"/>
+                                        <field name="product_id" domain="[('product_tmpl_id', '=', product_tmpl_id)]"/>
+                                        <field name="product_uom" readonly="1" force_save="1"/>
+                                    </group>
+                                    <group>
+                                        <field name="discount"/>
+                                        <field name="product_uom_qty"/>
+                                        <field name="product_uom" readonly="1" force_save="1"/>
+                                        <field name="oring_price_unit" readonly="1" force_save="1"/>
+                                        <field name="price_unit"/>
+                                        <field name="currency_id" readonly="1" force_save="1"/>
+                                        <field name="price_tax" readonly="1"/>
+                                        <field name="price_subtotal"/>
+                                        <field name="tax_id" widget="many2many_tags"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                    <footer>
+                        <button name="action_create_sale_lines" string="Create Quotation" type="object" class="oe_highlight"/>
+                        <button string="Cancel" class="oe_link" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="act_open_bom_sale_order" model="ir.actions.act_window">
+            <field name="name">Create Quotation</field>
+            <field name="res_model">bom.sale.order</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_bom_sale_order_form"/>
+            <field name="target">new</field>
+        </record>
+
+        <act_window
+            id="act_open_bom_sale_order_multi"
+            multi="True"
+            key2="client_action_multi"
+            name="Create Quotation"
+            res_model="bom.sale.order"
+            src_model="project.mrp.bom"
+            view_mode="form"
+            target="new"
+            view_type="form"
+            view_id="view_bom_sale_order_form" />
+
+    </data>
+</odoo>

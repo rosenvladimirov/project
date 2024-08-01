@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_project_mrp_bom_mrp_user,project.mrp.bom user,model_project_mrp_bom,project.group_project_user,1,0,0,0
+access_project_mrp_bom_mrp_manager,project.mrp.bom manager,model_project_mrp_bom,project.group_project_manager,1,1,1,1
+access_project_mrp_bom_line_mrp_user,project.mrp.bom.line user,model_project_mrp_bom_line,project.group_project_user,1,0,0,0
+access_project_mrp_bom_mrp_line_manager,project.mrp.bom.line manager,model_project_mrp_bom_line,project.group_project_manager,1,1,1,1
+access_project_mrp_bom_operation_mrp_user,project.mrp.bom.operation user,model_project_mrp_bom_operation,project.group_project_user,1,0,0,0
+access_project_mrp_bom_operation_manager,project.mrp.bom.operation manager,model_project_mrp_bom_operation,project.group_project_manager,1,1,1,1
+access_project_product_types_mrp_user,project.product.types user,model_project_product_types,project.group_project_user,1,0,0,0
+access_project_product_types_manager,project.product.types manager,model_project_product_types,project.group_project_manager,1,1,1,1
