@@ -14,7 +14,6 @@ class ProductCategory(models.Model):
 
     product_type_id = fields.Many2one('project.product.types', 'Product Type')
 
-    @api.multi
     def get_product_type_id(self):
         product_type_id = False
         for record in self:
@@ -56,7 +55,6 @@ class ProductTemplate(models.Model):
         for template in (self - unique_variants):
             template.direct_standard_price = 0.0
 
-    @api.one
     def _set_direct_standard_price(self):
         if len(self.product_variant_ids) == 1:
             self.product_variant_ids.direct_standard_price = self.direct_standard_price
@@ -76,7 +74,6 @@ class ProductTemplate(models.Model):
         product_variant_ids = self.env['product.product'].search(domain)
         return [('product_variant_ids', 'in', product_variant_ids.ids)]
 
-    @api.multi
     @api.depends('product_variant_ids')
     def get_remote_qty(self):
         for record in self:
@@ -98,7 +95,6 @@ class ProductProduct(models.Model):
     remote_available = fields.Float('In Outside storages', digits=dp.get_precision('Product Unit of Measure'))
     last_update_qty = fields.Datetime('Last update External Qty')
 
-    @api.multi
     def get_remote_qty(self):
         res = False
         for record in self:

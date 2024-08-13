@@ -15,7 +15,9 @@
                             <label for="product_qty" string="Quantity"/>
                             <div class="o_row">
                                 <field name="product_qty"/>
-                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                                <field name="product_uom_id"
+                                       options="{'no_open':True,'no_create':True}"
+                                       groups="uom.group_uom"/>
                             </div>
                         </group>
                         <group>
@@ -42,11 +44,15 @@
                     <field name="product_tmpl_id"/>
                     <field name="partner_id"/>
                     <field name="product_qty"/>
-                    <field name="price_unit" groups="sale.group_show_price_subtotal"/>
-                    <field name="avg_price_unit" groups="sale.group_show_price_subtotal"/>
-                    <field name="price_subtotal" groups="sale.group_show_price_subtotal"/>
-                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
-                    <field name="attribute_value_ids" widget="many2many_tags" options="{'no_create': True}" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant" invisible="1"/>
+                    <field name="price_unit"/>
+                    <field name="avg_price_unit"/>
+                    <field name="price_subtotal"/>
+                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
+                    <field name="attribute_value_ids"
+                           widget="many2many_tags"
+                           options="{'no_create': True}"
+                           domain="[('pav_attribute_line_ids.product_tmpl_id', '=', parent.product_tmpl_id)]"
+                           groups="product.group_product_variant" invisible="1"/>
                     <field name="description"/>
                     <button name="operation_bom_line" icon="fa-sliders" type="object"/>
                     <button name="get_price" icon="fa-usd" type="object"/>
@@ -63,9 +69,9 @@
                     <field name="project_bom_id"/>
                     <field name="product_tmpl_id"/>
                     <group expand="0" string="Group By...">
-                        <filter string="Bill Of Material" domain="[]" context="{'group_by':'project_bom_id'}"/>
-                        <filter string="Product" domain="[]" context="{'group_by':'product_tmpl_id'}"/>
-                        <filter string='Default Unit of Measure' domain="[]" context="{'group_by' : 'product_uom_id'}"/>
+                        <filter name="bom" string="Bill Of Material" domain="[]" context="{'group_by':'project_bom_id'}"/>
+                        <filter name="product" string="Product" domain="[]" context="{'group_by':'product_tmpl_id'}"/>
+                        <filter name="uom" string='Default Unit of Measure' domain="[]" context="{'group_by' : 'product_uom_id'}"/>
                    </group>
                 </search>
             </field>
@@ -76,7 +82,6 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.mrp.bom.line</field>
             <field name="domain">[]</field> <!-- force empty -->
-            <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref="view_mrp_bom_line_filter"/>
             <field name="help" type="html">
@@ -101,11 +106,11 @@
                 <form string="Bill of Material">
                     <sheet>
                         <div class="oe_button_box" name="button_box">
-                            <button name="toggle_active" type="object"
-                                    class="oe_stat_button" icon="fa-archive">
-                                <field name="active" widget="boolean_button"
-                                    options='{"terminology": "archive"}'/>
-                            </button>
+<!--                            <button name="toggle_active" type="object"-->
+<!--                                    class="oe_stat_button" icon="fa-archive">-->
+<!--                                <field name="active" widget="boolean_button"-->
+<!--                                    options='{"terminology": "archive"}'/>-->
+<!--                            </button>-->
                             <button name="action_sort"
                                 icon="fa-sort-numeric-asc"
                                 class="oe_stat_button"
@@ -135,7 +140,7 @@
                                     class="oe_stat_button"
                                     icon="fa fa-caret-square-o-down"
                                     style="color: #008784 !important;">
-                                    <field name="work_added" widget="boolean_button"
+                                    <field name="work_added" widget="boolean_toggle"
                                         options='{"terminology": {"string_true": "Adding", "hover_true": "ADDING", "string_false": "View", "hover_false": "VIEW"}}'/>
                             </button>
                         </div>
@@ -150,15 +155,15 @@
                                 <label for="product_qty" string="Quantity"/>
                                 <div class="o_row">
                                     <field name="product_qty"/>
-                                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
                                 </div>
                             </group>
                             <group>
                                 <field name="code"/>
-                                <field name="version" widget="mask" data-inputmask="'mask': '99.99'"/>
+                                <field name="version" data-inputmask="'mask': '99.99'"/>
 <!--                                <field name="bom_ids" readonly="1" widget="many2many_tags" options="{'open_view': True}"/>-->
                                 <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                <field name="sale_order_ids" widget="many2many_tags" placeholder="Use to calculate forecast quantity" domain="[('product_id', '=', product_id)]"/>
+                                <field name="sale_order_ids" widget="many2many_tags" placeholder="Use to calculate forecast quantity" domain="[('order_line.product_id', '=', product_id)]"/>
                                 <field name="currency_id" invisible="1"/>
                                 <field name="last_update_qty" readonly="1" force_save="1"/>
                                 <field name="price_unit_type"/>
@@ -166,7 +171,7 @@
                         </group>
                         <notebook>
                             <page string="Technical data">
-                                <field name="project_bom_line_ids" widget="one2many_list">
+                                <field name="project_bom_line_ids">
                                     <tree string="Components" editable="top" limit="300">
                                         <field name="sequence" widget="handle"/>
                                         <field name="product_type_id"/>
@@ -174,12 +179,17 @@
                                         <field name="partner_id"/>
                                         <field name="product_qty"/>
                                         <field name="forecast_product_qty"/>
-                                        <field name="price_unit" groups="sale.group_show_price_subtotal"/>
-                                        <field name="price_subtotal" groups="sale.group_show_price_subtotal"/>
-                                        <field name="purchase_price_subtotal" groups="sale.group_show_price_subtotal"/>
-                                        <field name="direct_price_subtotal" invisible="1" groups="sale.group_show_price_subtotal"/>
-                                        <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
-                                        <field name="attribute_value_ids" widget="many2many_tags" options="{'no_create': True}" domain="[('product_ids.product_tmpl_id', '=', parent.product_tmpl_id)]" groups="product.group_product_variant" invisible="1"/>
+                                        <field name="price_unit"/>
+                                        <field name="price_subtotal"/>
+                                        <field name="purchase_price_subtotal"/>
+                                        <field name="direct_price_subtotal" invisible="1"/>
+                                        <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
+                                        <field name="attribute_value_ids"
+                                               can_create="0"
+                                               widget="many2many_tags"
+                                               domain="[('pav_attribute_line_ids.product_tmpl_id', '=', parent.product_tmpl_id)]"
+                                               groups="product.group_product_variant"
+                                               invisible="1"/>
                                         <field name="qty_available"/>
                                         <field name="virtual_available"/>
                                         <field name="remote_available" readonly="1" force_save="1"/>
@@ -190,10 +200,18 @@
                                     </tree>
                                 </field>
                                 <group class="oe_subtotal_footer oe_right">
-                                    <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="standard_amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="standard_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="direct_standard_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="amount_untaxed"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="standard_amount_untaxed"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="standard_price"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="direct_standard_price"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
                                 </group>
                                 <field name="note" class="oe_inline" placeholder="Write description ..."/>
                                 <div class="oe_clear"/>
@@ -222,7 +240,7 @@
                     <field name="product_id"/>
                     <field name="code"/>
                     <field name="product_qty"/>
-                    <field name="product_uom_id" groups="product.group_uom"/>
+                    <field name="product_uom_id" groups="uom.group_uom"/>
                 </tree>
             </field>
         </record>
@@ -264,8 +282,8 @@
                     <filter string="Archived" name="inactive" domain="[('active','=',False)]"/>
                     <separator/>
                     <group expand="0" string="Group By...">
-                        <filter string="Product" domain="[]" context="{'group_by':'product_tmpl_id'}"/>
-                        <filter string='Default Unit of Measure' domain="[]" context="{'group_by' : 'product_uom_id'}"/>
+                        <filter name="product" string="Product" domain="[]" context="{'group_by':'product_tmpl_id'}"/>
+                        <filter name="uom" string='Default Unit of Measure' domain="[]" context="{'group_by' : 'product_uom_id'}"/>
                    </group>
                 </search>
             </field>
@@ -275,8 +293,7 @@
             <field name="name">Project - Bills of Materials</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.mrp.bom</field>
-            <field name="domain">[]</field> <!-- force empty -->
-            <field name="view_type">form</field>
+            <field name="domain">[]</field>
             <field name="view_mode">tree,kanban,form</field>
             <field name="search_view_id" ref="view_project_mrp_bom_filter"/>
             <field name="help" type="html">
@@ -310,7 +327,6 @@
             <field name="context">{'default_product_tmpl_id': active_id, 'search_default_product_tmpl_id': active_id}</field>
             <field name="name">Project for Bill of Materials</field>
             <field name="res_model">project.mrp.bom</field>
-            <field name="view_type">form</field>
         </record>
 
         <record id="product_open_project_bom" model="ir.actions.act_window">
@@ -318,7 +334,6 @@
             <field name="name">Project for Bill of Materials</field>
             <field name="res_model">project.mrp.bom</field>
             <field name="domain">[]</field> <!-- Force empty -->
-            <field name="view_type">form</field>
         </record>
 
         <!-- Project BOM Operations -->
@@ -340,7 +355,7 @@
                             <label for="product_qty" string="Quantity"/>
                             <div class="o_row">
                                 <field name="product_qty"/>
-                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                                <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
                             </div>
                             <field name="attribute_value_ids" widget="many2many_tags" groups="product.group_product_variant"/>
                         </group>
@@ -361,7 +376,7 @@
                     <field name="product_tmpl_id" readonly="1"/>
                     <field name="product_id"/>
                     <field name="product_qty" sum="Total q-ty"/>
-                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="product.group_uom"/>
+                    <field name="product_uom_id" can_create="0" groups="uom.group_uom"/>
                     <button name="transfer_variants" icon="fa-clone" type="object"/>
                     <field name="attribute_value_ids" widget="many2many_tags" groups="product.group_product_variant"/>
                     <field name="description"/>
@@ -377,7 +392,7 @@
                 <search string="Search Bill Of Material Components">
                     <field name="product_id"/>
                     <group expand="0" string="Group By...">
-                        <filter string="Bill Of Material" domain="[]" context="{'group_by':'project_bom_id'}"/>
+                        <filter name="uom" string="Bill Of Material" domain="[]" context="{'group_by':'project_bom_id'}"/>
                    </group>
                 </search>
             </field>
@@ -387,7 +402,6 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.mrp.bom.operation</field>
             <field name="domain">[]</field> <!-- force empty -->
-            <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref="view_project_mrp_bom_operation_filter"/>
             <field name="help" type="html">
@@ -407,7 +421,6 @@
             <field name="context">{'default_product_tmpl_id': active_id, 'search_default_product_tmpl_id': active_id}</field>
             <field name="name">Project - Bill of Materials</field>
             <field name="res_model">project.mrp.bom</field>
-            <field name="view_type">form</field>
         </record>
     </data>
 </odoo>

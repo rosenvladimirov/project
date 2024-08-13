@@ -94,7 +94,6 @@ class ProjectMrpBom(models.Model):
     last_update_qty = fields.Datetime('Last update External Qty')
     note = fields.Text('Note', translate=True)
 
-    @api.multi
     def _compute_display_name(self):
         for record in self:
             if record.code:
@@ -102,12 +101,10 @@ class ProjectMrpBom(models.Model):
             else:
                 record.display_name = "%s" % record.product_tmpl_id.display_name
 
-    @api.multi
     def toggle_work_added(self):
         for record in self:
             record.work_added = not record.work_added
 
-    @api.multi
     def store_standard_price(self):
         for record in self:
             record.product_tmpl_id.standard_price = record.amount_untaxed
@@ -208,13 +205,11 @@ class ProjectMrpBom(models.Model):
                                     subtotal += line.price_subtotal
                                 record.direct_standard_price = subtotal / record.forecast_product_qty
 
-    @api.multi
     def action_sort(self):
         for record in self:
             for line in record.project_bom_line_ids:
                 line.sequence = int(line.product_type_id.code or '0')
 
-    @api.multi
     def action_version_control(self):
         for record in self:
             for line in record.bom_ids:
@@ -270,7 +265,6 @@ class ProjectMrpBom(models.Model):
     #         record.action_version_control()
     #         record.bom_id.sequence = 9999
 
-    @api.multi
     def operation_bom_line(self):
         for record in self:
             operation_ids = self.env['project.mrp.bom.operation']
@@ -287,7 +281,6 @@ class ProjectMrpBom(models.Model):
             })
             return action
 
-    @api.multi
     def material_bom_line(self):
         for record in self:
             line_ids = self.env['project.mrp.bom.line']
@@ -303,7 +296,6 @@ class ProjectMrpBom(models.Model):
             })
             return action
 
-    @api.multi
     def action_get_external_qty(self):
         for record in self:
             if self.env.user.company_id.remote_user \
@@ -345,7 +337,6 @@ class ProjectMrpBom(models.Model):
                         #     except ValueError:
                         #         _logger.info("Error with import")
 
-    @api.multi
     def unlink(self):
         for record in self:
             for operation in record.mapped('project_bom_line_ids').mapped('operation_ids'):
@@ -466,7 +457,6 @@ class ProjectMrpBomLine(models.Model):
                 raise ValidationError(_('Project line product %s should be only '
                                         'present one time in project products list.') % bom.product_tmpl_id.name)
 
-    @api.multi
     def _compute_stock_value(self):
         for record in self:
             record.avg_price_unit = record._get_average_price()
@@ -489,19 +479,16 @@ class ProjectMrpBomLine(models.Model):
         avg_qty_invoiced_sum = avg_qty_invoiced_sum != 0.0 and avg_qty_invoiced_sum or 1.0
         return avg_price_unit_sum / avg_qty_invoiced_sum
 
-    @api.multi
     @api.depends('operation_ids')
     def _compute_qty_available(self):
         for record in self:
             record.qty_available = sum([x.qty_available for x in record.operation_ids.mapped('product_id')])
 
-    @api.multi
     @api.depends('operation_ids')
     def _compute_remote_available(self):
         for record in self:
             record.remote_available = mean([x.remote_available for x in record.operation_ids.mapped('product_id')])
 
-    @api.multi
     @api.depends('operation_ids')
     def _compute_virtual_available(self):
         for record in self:
@@ -644,7 +631,6 @@ class ProjectMrpBomLine(models.Model):
     #             })
     #             return action
 
-    @api.multi
     def operation_bom_line(self):
         for record in self:
             action = self.env.ref('project_bom.project_mrp_bom_operation_form_action')
@@ -661,7 +647,6 @@ class ProjectMrpBomLine(models.Model):
             })
             return action
 
-    @api.multi
     def get_price(self):
         line_ids = self.env['project.mrp.bom.line']
         action = self.env.ref('project_bom.act_open_bom_get_purchase_price').read()[0]
@@ -676,7 +661,6 @@ class ProjectMrpBomLine(models.Model):
             values['product_uom_id'] = self.env['product.product'].browse(values['product_id']).uom_id.id
         return super(ProjectMrpBomLine, self).create(values)
 
-    @api.multi
     def unlink(self):
         for record in self:
             for operation in record.mapped('operation_ids'):
@@ -717,7 +701,6 @@ class ProjectMrpBomOperation(models.Model):
                                            help="BOM Product Variants needed form apply this line.")
     display_name = fields.Char('Display Name', compute='_compute_display_name')
 
-    @api.multi
     def _compute_display_name(self):
         for record in self:
             if record.code:
@@ -775,12 +758,10 @@ class ProjectMrpBomOperation(models.Model):
                 self.project_bom_line_id = project_bom_line_ids[0]
         return res
 
-    @api.multi
     def duplicate(self):
         for record in self:
             record.project_bom_line_id.operation_ids |= record.copy()
 
-    @api.multi
     def transfer_variants(self):
         for record in self:
             product_value_ids = record.product_id.attribute_value_ids
