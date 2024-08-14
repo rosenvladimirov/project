@@ -14,14 +14,15 @@
         'project',
         'product',
         'purchase',
+        'mrp',
     ],
     'data': [
         'data/ir_cron.xml',
         'security/ir.model.access.csv',
         'views/project_mrp_bom_views.xml',
         'views/product_template_views.xml',
-        'wizards/purchase_prices.xml',
-        'wizards/product_bom_import_wizard.xml',
+        # 'wizards/purchase_prices.xml',
+        # 'wizards/product_bom_import_wizard.xml',
     ],
     'demo': [
     ],

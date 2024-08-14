@@ -11,12 +11,10 @@ class Task(models.Model):
     mrp_product_id = fields.Many2one('product.product', 'Product')
     project_mrp_count = fields.Integer('Count Project Bom', compute='_compute_project_mrp_count')
 
-    @api.multi
     def _compute_project_mrp_count(self):
         for record in self:
             record.project_mrp_count = len(record.project_mrp_ids.ids)
 
-    @api.multi
     def action_create_mrp_bom(self):
         for record in self:
             if record.mrp_product_tmpl_id or record.mrp_product_id:
@@ -40,7 +38,6 @@ class Task(models.Model):
                     'version': '01.01',
                     'product_tmpl_id': mrp_product_tmpl_id.id,
                     'product_id': record.mrp_product_id and record.mrp_product_id.id or False,
-                    'type': 'normal',
                     'company_id': self.env.user.company_id.id,
                     'product_qty': 1.0,
                     'task_id': record.id,

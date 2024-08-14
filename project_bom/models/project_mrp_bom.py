@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-from statistics import mean
+# from statistics import mean
+import logging
 
 from odoo import api, fields, models, tools, SUPERUSER_ID, _
 from odoo.exceptions import UserError, AccessError, ValidationError
-from odoo.addons import decimal_precision as dp
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -26,11 +25,11 @@ class ProjectMrpBom(models.Model):
     _order = 'sequence, id'
 
     def _get_default_product_uom_id(self):
-        return self.env['product.uom'].search([], limit=1, order='id').id
+        return self.env['uom.uom'].search([], limit=1, order='id').id
 
     @api.depends('project_bom_line_ids.price_subtotal')
     def _amount_all(self):
-        for project_bom in self:
+        for project_bom in self.filtered(lambda r: r.currency_id):
             direct_amount_untaxed = amount_untaxed = 0.0
             for line in project_bom.project_bom_line_ids:
                 amount_untaxed += line.price_subtotal
@@ -57,11 +56,11 @@ class ProjectMrpBom(models.Model):
     #                              help="The operations for producing this BoM.  When a routing is specified, "
     #                                   "the production orders will be executed through work orders, otherwise everything"
     #                                   " is processed in the production order itself. ")
-    product_qty = fields.Float('Quantity', default=1.0, digits=dp.get_precision('Unit of Measure'), required=True)
-    bulk_product_qty = fields.Float('Bulk produce', default=1.0, digits=dp.get_precision('Unit of Measure'),
+    product_qty = fields.Float('Quantity', default=1.0, required=True)
+    bulk_product_qty = fields.Float('Bulk produce', default=1.0,
                                     required=True)
-    forecast_product_qty = fields.Float('Forcast Quantity', default=1.0, digits=dp.get_precision('Unit of Measure'))
-    product_uom_id = fields.Many2one('product.uom', 'Product Unit of Measure',
+    forecast_product_qty = fields.Float('Forcast Quantity', default=1.0)
+    product_uom_id = fields.Many2one('uom.uom', 'Product Unit of Measure',
                                      default=_get_default_product_uom_id, oldname='product_uom', required=True,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the "
                                           "inventory control")
@@ -94,7 +93,6 @@ class ProjectMrpBom(models.Model):
     last_update_qty = fields.Datetime('Last update External Qty')
     note = fields.Text('Note', translate=True)
 
-    @api.multi
     def _compute_display_name(self):
         for record in self:
             if record.code:
@@ -102,12 +100,11 @@ class ProjectMrpBom(models.Model):
             else:
                 record.display_name = "%s" % record.product_tmpl_id.display_name
 
-    @api.multi
+
     def toggle_work_added(self):
         for record in self:
             record.work_added = not record.work_added
 
-    @api.multi
     def store_standard_price(self):
         for record in self:
             record.product_tmpl_id.standard_price = record.amount_untaxed
@@ -208,13 +205,11 @@ class ProjectMrpBom(models.Model):
                                     subtotal += line.price_subtotal
                                 record.direct_standard_price = subtotal / record.forecast_product_qty
 
-    @api.multi
     def action_sort(self):
         for record in self:
             for line in record.project_bom_line_ids:
                 line.sequence = int(line.product_type_id.code or '0')
 
-    @api.multi
     def action_version_control(self):
         for record in self:
             for line in record.bom_ids:
@@ -270,7 +265,6 @@ class ProjectMrpBom(models.Model):
     #         record.action_version_control()
     #         record.bom_id.sequence = 9999
 
-    @api.multi
     def operation_bom_line(self):
         for record in self:
             operation_ids = self.env['project.mrp.bom.operation']
@@ -287,7 +281,6 @@ class ProjectMrpBom(models.Model):
             })
             return action
 
-    @api.multi
     def material_bom_line(self):
         for record in self:
             line_ids = self.env['project.mrp.bom.line']
@@ -303,49 +296,6 @@ class ProjectMrpBom(models.Model):
             })
             return action
 
-    @api.multi
-    def action_get_external_qty(self):
-        for record in self:
-            if self.env.user.company_id.remote_user \
-                and self.env.user.company_id.remote_password \
-                and self.env.user.company_id.remote_database:
-                remote = self.env.user.company_id.remote_access()
-                if remote:
-                    location_id = False
-                    try:
-                        warehouse = remote.env['stock.warehouse'].search(
-                            [('company_id', '=', remote.env.user.company_id.id)], limit=1)
-                        if warehouse:
-                            warehouse = remote.env['stock.warehouse'].browse(warehouse)
-                            location_id = warehouse.lot_stock_id.id
-                    except ValueError:
-                        _logger.info("Error with import")
-
-                    for line in record.project_bom_line_ids.mapped('operation_ids'):
-                        if line.product_id.with_context(dict(self._context, location_id=location_id)).get_remote_qty():
-                            record.last_update_qty = line.product_id.last_update_qty
-                        # default_code = line.product_id.default_code
-                        # res_remote = remote.env['product.product'].search([
-                        #     ('default_code', '=', default_code)])
-                        # if not res_remote:
-                        #     res_remote = remote.env['product.template'].search([
-                        #         ('default_code', '=', default_code)])
-                        #     products = remote.env['product.product'].browse(res_remote)
-                        #     res_remote_new = set([])
-                        #     for product in products:
-                        #         res_remote_new.update([product.id])
-                        #     res_remote = list(res_remote_new)
-                        # # _logger.info("RES REMOTE %s" % res_remote)
-                        # if res_remote and location_id:
-                        #     try:
-                        #         for product_remote in remote.env['product.product'].browse(res_remote):
-                        #             qty_available = product_remote.with_context(dict(self._context, location=location_id)).qty_available
-                        #             line.product_id.remote_available = qty_available
-                        #             record.last_update_qty = fields.Datetime.now()
-                        #     except ValueError:
-                        #         _logger.info("Error with import")
-
-    @api.multi
     def unlink(self):
         for record in self:
             for operation in record.mapped('project_bom_line_ids').mapped('operation_ids'):
@@ -361,31 +311,37 @@ class ProjectMrpBomLine(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     def _get_default_product_uom_id(self):
-        return self.env['product.uom'].search([], limit=1, order='id').id
+        return self.env['uom.uom'].search([], limit=1, order='id').id
 
     @api.depends('product_qty', 'price_unit', 'project_bom_id.forecast_product_qty')
     def _compute_amount(self):
         for line in self:
-            purchase_price_unit = []
-            purchase_price_subtotal = 0.0
-            for product_id in line.product_tmpl_id.product_variant_ids:
-                purchase_ids = self.env['purchase.order.line'].search([
-                    ('product_id', '=', product_id.id),
-                    ('state', 'in', ['purchase', 'done'],),
-                    '|',
-                    ('account_analytic_id', '=', False),
-                    ('account_analytic_id', '=', line.project_bom_id.account_analytic_id.id)
-                ])
-                for purchase_id in purchase_ids:
-                    if purchase_id.qty_received != 0.0:
-                        price_subtotal = purchase_id._get_stock_move_price_unit() * purchase_id.qty_received
-                        purchase_price_unit.append(price_subtotal)
-                purchase_price_subtotal = len(purchase_price_unit) > 0 and sum(purchase_price_unit) or 0.0
             line.update({
-                'price_subtotal': line.product_qty * line.project_bom_id.forecast_product_qty * line.price_unit,
-                'direct_price_subtotal': line.product_qty * line.price_unit,
-                'purchase_price_subtotal': purchase_price_subtotal,
+                'price_subtotal': 0.0,
+                'direct_price_subtotal': 0.0,
+                'purchase_price_subtotal': 0.0,
             })
+
+            # purchase_price_unit = []
+            # purchase_price_subtotal = 0.0
+            # for product_id in line.product_tmpl_id.product_variant_ids:
+            #     purchase_ids = self.env['purchase.order.line'].search([
+            #         ('product_id', '=', product_id.id),
+            #         ('state', 'in', ['purchase', 'done'],),
+            #         '|',
+            #         ('account_analytic_id', '=', False),
+            #         ('account_analytic_id', '=', line.project_bom_id.account_analytic_id.id)
+            #     ])
+            #     for purchase_id in purchase_ids:
+            #         if purchase_id.qty_received != 0.0:
+            #             price_subtotal = purchase_id._get_stock_move_price_unit() * purchase_id.qty_received
+            #             purchase_price_unit.append(price_subtotal)
+            #     purchase_price_subtotal = len(purchase_price_unit) > 0 and sum(purchase_price_unit) or 0.0
+            # line.update({
+            #     'price_subtotal': line.product_qty * line.project_bom_id.forecast_product_qty * line.price_unit,
+            #     'direct_price_subtotal': line.product_qty * line.price_unit,
+            #     'purchase_price_subtotal': purchase_price_subtotal,
+            # })
 
     @api.depends('product_qty', 'project_bom_id.forecast_product_qty')
     def _compute_forecast(self):
@@ -394,14 +350,11 @@ class ProjectMrpBomLine(models.Model):
                 'forecast_product_qty': line.product_qty * line.project_bom_id.forecast_product_qty
             })
 
-    # product_id = fields.Many2one('product.product', 'Product')
     product_type_id = fields.Many2one('project.product.types', 'Product type', required=True)
     product_tmpl_id = fields.Many2one('product.template', 'Product Template', required=True)
-    product_qty = fields.Float('Product Quantity', default=1.0,
-                               digits=dp.get_precision('Project Product Unit of Measure'))
-    forecast_product_qty = fields.Float('Forecast Product Quantity', compute='_compute_forecast',
-                                        digits=dp.get_precision('Project Product Unit of Measure'))
-    product_uom_id = fields.Many2one('product.uom', 'Product Unit of Measure',
+    product_qty = fields.Float('Product Quantity', default=1.0)
+    forecast_product_qty = fields.Float('Forecast Product Quantity', compute='_compute_forecast')
+    product_uom_id = fields.Many2one('uom.uom', 'Product Unit of Measure',
                                      default=_get_default_product_uom_id,
                                      required=True,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the "
@@ -409,12 +362,10 @@ class ProjectMrpBomLine(models.Model):
     price_unit = fields.Float('Unit Price',
                               help="Technical field used to record the product cost set by the user during a picking "
                                    "confirmation (when costing method used is 'average price' or 'real'). Value given "
-                                   "in company currency and in product uom.", copy=False,
-                              digits=dp.get_precision('Product Price'))
+                                   "in company currency and in product uom.", copy=False)
     avg_price_unit = fields.Float('Average Price', compute='_compute_stock_value',
                                   copy=False,
                                   store=True,
-                                  digits=dp.get_precision('Product Price'),
                                   help="Technical field used to record the product"
                                        "cost(average) set by the user during a picking "
                                        "confirmation (when costing method used is "
@@ -446,9 +397,6 @@ class ProjectMrpBomLine(models.Model):
     editable = fields.Boolean('Editable')
     qty_available = fields.Float('Quantity On Hand', compute='_compute_qty_available')
     virtual_available = fields.Float('Forecast Quantity', compute='_compute_virtual_available')
-    remote_available = fields.Float('In Outside storages',
-                                    digits=dp.get_precision('Product Unit of Measure'),
-                                    compute='_compute_remote_available')
 
     _sql_constraints = [
         ('bom_qty_zero', 'CHECK (product_qty>=0)', 'All product quantities must be greater or equal to 0.\n'
@@ -466,7 +414,6 @@ class ProjectMrpBomLine(models.Model):
                 raise ValidationError(_('Project line product %s should be only '
                                         'present one time in project products list.') % bom.product_tmpl_id.name)
 
-    @api.multi
     def _compute_stock_value(self):
         for record in self:
             record.avg_price_unit = record._get_average_price()
@@ -474,43 +421,35 @@ class ProjectMrpBomLine(models.Model):
     def _get_average_price(self):
         avg_price_unit = []
         avg_qty_invoiced = []
-        for product_id in self.product_tmpl_id.product_variant_ids:
-            purchase_ids = self.env['purchase.order.line'].search([
-                ('product_id', '=', product_id.id),
-                ('state', 'in', ['purchase', 'done'],),
-            ])
-            for purchase_id in purchase_ids:
-                if purchase_id.qty_received != 0.0:
-                    price_subtotal = purchase_id._get_stock_move_price_unit() * purchase_id.qty_received
-                    avg_price_unit.append(price_subtotal)
-                    avg_qty_invoiced.append(purchase_id.qty_received)
+        # for product_id in self.product_tmpl_id.product_variant_ids:
+        #     purchase_ids = self.env['purchase.order.line'].search([
+        #         ('product_id', '=', product_id.id),
+        #         ('state', 'in', ['purchase', 'done'],),
+        #     ])
+        #     for purchase_id in purchase_ids:
+        #         if purchase_id.qty_received != 0.0:
+        #             price_subtotal = purchase_id._get_stock_move_price_unit() * purchase_id.qty_received
+        #             avg_price_unit.append(price_subtotal)
+        #             avg_qty_invoiced.append(purchase_id.qty_received)
         avg_price_unit_sum = sum(avg_price_unit)
         avg_qty_invoiced_sum = sum(avg_qty_invoiced)
         avg_qty_invoiced_sum = avg_qty_invoiced_sum != 0.0 and avg_qty_invoiced_sum or 1.0
         return avg_price_unit_sum / avg_qty_invoiced_sum
 
-    @api.multi
     @api.depends('operation_ids')
     def _compute_qty_available(self):
         for record in self:
-            record.qty_available = sum([x.qty_available for x in record.operation_ids.mapped('product_id')])
+            record.qty_available = sum([x.purchased_product_qty for x in record.operation_ids.mapped('product_id')])
 
-    @api.multi
-    @api.depends('operation_ids')
-    def _compute_remote_available(self):
-        for record in self:
-            record.remote_available = mean([x.remote_available for x in record.operation_ids.mapped('product_id')])
-
-    @api.multi
     @api.depends('operation_ids')
     def _compute_virtual_available(self):
         for record in self:
-            record.virtual_available = sum([x.virtual_available for x in record.operation_ids.mapped('product_id')])
+            record.virtual_available = sum([x.purchased_product_qty for x in record.operation_ids.mapped('product_id')])
 
     @api.onchange('operation_ids')
     def onchange_operation_ids(self):
         if self.operation_ids:
-            self.product_qty = sum([x.product_uom_qty for x in self.operation_ids])
+            self.product_qty = sum([x.product_qty for x in self.operation_ids])
 
     @api.onchange('product_uom_id')
     def onchange_product_uom_id(self):
@@ -562,7 +501,7 @@ class ProjectMrpBomLine(models.Model):
     def _onchange_quantity(self):
         if not self.product_tmpl_id:
             return
-        seller = False
+        seller = self.env['product.supplierinfo']
         for product_id in self.product_tmpl_id.product_variant_ids:
             seller = product_id._select_seller(
                 partner_id=self.partner_id,
@@ -570,18 +509,22 @@ class ProjectMrpBomLine(models.Model):
                 uom_id=self.product_uom_id)
             if seller:
                 break
-        if not seller:
-            return
+        if seller:
+            price_unit = seller.price if seller else 0.0
+            company_id = self.project_bom_id.company_id
+            if price_unit and seller and company_id.currency_id and seller.currency_id != company_id.currency_id:
+                price_unit = seller.currency_id._convert(
+                    from_amount=price_unit,
+                    to_currency=company_id.currency_id,
+                    company=seller.company_id or self.env.company,
+                    date=fields.Date.today(),
+                    round=False,
+                )
 
-        price_unit = seller.price if seller else 0.0
-        company_id = self.project_bom_id.company_id
-        if price_unit and seller and company_id.currency_id and seller.currency_id != company_id.currency_id:
-            price_unit = seller.currency_id.compute(price_unit, company_id.currency_id)
+            if seller and self.product_uom_id and seller.product_uom != self.product_uom_id:
+                price_unit = seller.product_uom._compute_price(price_unit, self.product_uom_id)
 
-        if seller and self.product_uom_id and seller.product_uom != self.product_uom_id:
-            price_unit = seller.product_uom._compute_price(price_unit, self.product_uom_id)
-
-        self.price_unit = price_unit
+            self.price_unit = price_unit
 
     # @api.onchange('bom_line_ids')
     # def onchange_product_id(self):
@@ -644,7 +587,6 @@ class ProjectMrpBomLine(models.Model):
     #             })
     #             return action
 
-    @api.multi
     def operation_bom_line(self):
         for record in self:
             action = self.env.ref('project_bom.project_mrp_bom_operation_form_action')
@@ -661,7 +603,6 @@ class ProjectMrpBomLine(models.Model):
             })
             return action
 
-    @api.multi
     def get_price(self):
         line_ids = self.env['project.mrp.bom.line']
         action = self.env.ref('project_bom.act_open_bom_get_purchase_price').read()[0]
@@ -670,13 +611,13 @@ class ProjectMrpBomLine(models.Model):
         action['active_ids'] = line_ids.ids
         return action
 
-    @api.model
+    @api.model_create_multi
     def create(self, values):
-        if 'product_id' in values and 'product_uom_id' not in values:
-            values['product_uom_id'] = self.env['product.product'].browse(values['product_id']).uom_id.id
+        for vals in values:
+            if 'product_id' in vals and 'product_uom_id' not in vals:
+                vals['product_uom_id'] = self.env['product.product'].browse(vals['product_id']).uom_id.id
         return super(ProjectMrpBomLine, self).create(values)
 
-    @api.multi
     def unlink(self):
         for record in self:
             for operation in record.mapped('operation_ids'):
@@ -690,22 +631,20 @@ class ProjectMrpBomOperation(models.Model):
     _order = "sequence, id"
 
     def _get_default_product_uom_id(self):
-        return self.env['product.uom'].search([], limit=1, order='id').id
+        return self.env['uom.uom'].search([], limit=1, order='id').id
 
     sequence = fields.Integer('Sequence', default=1,
                               help="Gives the sequence order when displaying.")
     name = fields.Char('Name')
     code = fields.Char('Code')
     description = fields.Char('Description')
-    product_qty = fields.Float('Product Quantity', default=1.0,
-                               digits=dp.get_precision('Product Unit of Measure'))
+    product_qty = fields.Float('Product Quantity', default=1.0)
     project_bom_id = fields.Many2one('project.mrp.bom', 'Parent Project BOM',
                                      related='project_bom_line_id.project_bom_id', store=True)
     project_bom_line_id = fields.Many2one('project.mrp.bom.line', 'Project Bom Line', required=True, index=True)
-    # routing_id = fields.Many2one('mrp.routing', 'Routing', related='project_bom_line_id.project_bom_id.routing_id')
     product_tmpl_id = fields.Many2one('product.template', 'Product Template', related='product_id.product_tmpl_id')
     product_id = fields.Many2one('product.product', 'Product')
-    product_uom_id = fields.Many2one('product.uom', 'Product Unit of Measure',
+    product_uom_id = fields.Many2one('uom.uom', 'Product Unit of Measure',
                                      default=_get_default_product_uom_id,
                                      required=True,
                                      help="Unit of Measure (Unit of Measure) is the unit of measurement for the "
@@ -717,7 +656,6 @@ class ProjectMrpBomOperation(models.Model):
                                            help="BOM Product Variants needed form apply this line.")
     display_name = fields.Char('Display Name', compute='_compute_display_name')
 
-    @api.multi
     def _compute_display_name(self):
         for record in self:
             if record.code:
@@ -775,15 +713,13 @@ class ProjectMrpBomOperation(models.Model):
                 self.project_bom_line_id = project_bom_line_ids[0]
         return res
 
-    @api.multi
     def duplicate(self):
         for record in self:
             record.project_bom_line_id.operation_ids |= record.copy()
 
-    @api.multi
     def transfer_variants(self):
         for record in self:
-            product_value_ids = record.product_id.attribute_value_ids
+            product_value_ids = record.product_id.product_template_attribute_value_ids
             project_bom_id = record.project_bom_line_id.project_bom_id
             bom_value_ids = project_bom_id.product_tmpl_id.attribute_line_ids.mapped('attribute_id').mapped('value_ids')
 
