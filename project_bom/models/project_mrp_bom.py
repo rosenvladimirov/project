@@ -16,11 +16,11 @@ class ProjectMrpBom(models.Model):
     def _get_default_product_uom_id(self):
         return self.env['uom.uom'].search([], limit=1, order='id').id
 
-    @api.depends('project_bom_line_ids.price_subtotal')
+    @api.depends('project_bom_group_ids.price_subtotal')
     def _amount_all(self):
         for project_bom in self.filtered(lambda r: r.currency_id):
             direct_amount_untaxed = amount_untaxed = 0.0
-            for line in project_bom.project_bom_line_ids:
+            for line in project_bom.project_bom_group_ids:
                 amount_untaxed += line.price_subtotal
                 direct_amount_untaxed += line.direct_price_subtotal
             project_bom.update({
@@ -37,7 +37,7 @@ class ProjectMrpBom(models.Model):
                                  "material without removing it.")
     work_added = fields.Boolean('Work type', help='Please checked it if work with every time in added mode')
     code = fields.Char('Code')
-    version = fields.Char('Version', default='1.0')
+    version = fields.Char('Version', default='1.0', required=True)
     display_name = fields.Char('Display name', compute='_compute_display_name')
     product_id = fields.Many2one('product.product', 'Product')
     product_tmpl_id = fields.Many2one('product.template', 'Product Template', required=True)
@@ -52,7 +52,14 @@ class ProjectMrpBom(models.Model):
     company_id = fields.Many2one('res.company', 'Company',
                                  default=lambda self: self.env['res.company']._company_default_get('mrp.bom'),
                                  required=True)
-    project_bom_line_ids = fields.One2many('project.mrp.bom.line', 'project_bom_id', 'BoM Lines', copy=True)
+    project_bom_line_ids = fields.One2many('project.mrp.bom.line',
+                                           'project_bom_id',
+                                           'BoM Lines',
+                                           copy=True)
+    project_bom_group_ids = fields.One2many('project.mrp.bom.group',
+                                            'project_bom_id',
+                                            'BoM Groups',
+                                            copy=False)
     task_id = fields.Many2one('project.task', 'Project Task')
     account_analytic_id = fields.Many2one('account.analytic.account', 'Analytic account')
     price_unit_type = fields.Selection([
@@ -81,7 +88,6 @@ class ProjectMrpBom(models.Model):
                 record.display_name = "(%s) %s" % (record.code, record.product_tmpl_id.display_name)
             else:
                 record.display_name = "%s" % record.product_tmpl_id.display_name
-
 
     def toggle_work_added(self):
         for record in self:

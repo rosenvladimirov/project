@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 class ProjectMrpBomGroup(models.Model):
     _name = 'project.mrp.bom.group'
-    _description = 'Project bom lines'
+    _description = 'Project bom groups'
     _order = "sequence, id"
     _rec_name = "product_tmpl_id"
     _check_company_auto = True
@@ -81,8 +81,12 @@ class ProjectMrpBomGroup(models.Model):
 
     sequence = fields.Integer('Sequence', default=1,
                               help="Gives the sequence order when displaying.")
-    project_bom_id = fields.Many2one('project.mrp.bom', 'Parent Project BOM',
-                                     index=True, ondelete='cascade', required=True)
+    project_bom_id = fields.Many2one(
+    'project.mrp.bom',
+    'Parent Project BOM',
+    index=True,
+    ondelete='cascade',
+    required=True)
     attribute_value_ids = fields.Many2many('product.attribute.value', string='Variants',
                                            help="BOM Product Variants needed form apply this line.")
     # operation_id = fields.Many2one('mrp.routing.workcenter', 'Consumed in Operation',
