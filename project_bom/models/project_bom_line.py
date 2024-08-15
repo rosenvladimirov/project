@@ -13,7 +13,7 @@ class ProjectMrpBomLine(models.Model):
     _description = 'Project bom lines'
     _order = "sequence, id"
     # _inherit = ['mail.thread', 'mail.activity.mixin']
-    _inherits = {'mrp.bom.line', 'bom_line_id'}
+    _inherits = {'mrp.bom.line': 'bom_line_id'}
 
     def _get_default_product_uom_id(self):
         return self.env['uom.uom'].search([], limit=1, order='id').id
@@ -27,7 +27,8 @@ class ProjectMrpBomLine(models.Model):
                                      ondelete='cascade',
                                      required=True)
     company_id = fields.Many2one('res.company',
-                                 related='project_bom_id.company_id')
+                                 related='project_bom_id.company_id',
+                                 store=True)
     bom_line_id = fields.Many2one('mrp.bom.line',
                                   'BOM Line',
                                   required=True,

@@ -70,7 +70,6 @@
                                         <field name="project_bom_id"/>
                                         <field name="project_operation_id"/>
                                         <field name="project_product_qty"/>
-                                        <field name="project_operation_id"/>
                                         <field name="approve"/>
 <!--                                        <button name="operation_bom_line" icon="fa-sliders" type="object"/>-->
 <!--                                        <button name="get_price" icon="fa-usd" type="object"/>-->
