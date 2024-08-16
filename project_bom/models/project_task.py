@@ -38,7 +38,6 @@ class Task(models.Model):
                     'version': '01.01',
                     'product_tmpl_id': mrp_product_tmpl_id.id,
                     'product_id': record.mrp_product_id and record.mrp_product_id.id or False,
-                    'type': 'normal',
                     'company_id': self.env.user.company_id.id,
                     'product_qty': 1.0,
                     'task_id': record.id,

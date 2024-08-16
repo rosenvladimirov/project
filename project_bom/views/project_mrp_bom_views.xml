@@ -1,103 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-                <!-- Project BOM Line -->
-        <record id="project_mrp_bom_line_view_form" model="ir.ui.view">
-            <field name="name">project.mrp.bom.line.view.form</field>
-            <field name="model">project.mrp.bom.line</field>
-            <field name="arch" type="xml">
-                <form string="Project for Bill of Material line">
-                    <group>
-                        <group string="Product">
-                            <field name="sequence"/>
-                            <field name="product_type_id"/>
-                            <field name="product_tmpl_id"/>
-                            <label for="product_qty" string="Quantity"/>
-                            <div class="o_row">
-                                <field name="product_qty"/>
-                                <field name="product_uom_id"
-                                       options="{'no_open':True,'no_create':True}"
-                                       groups="uom.group_uom"/>
-                            </div>
-                        </group>
-                        <group>
-                            <field name="partner_id"/>
-                            <field name="product_qty"/>
-                            <field name="price_unit"/>
-                        </group>
-                        <group>
-                            <field name="attribute_value_ids" widget="many2many_tags"/>
-                        </group>
-                        <field name="description" nolabel="1" placeholder="Description ..."/>
-                    </group>
-                </form>
-            </field>
-        </record>
-
-        <record id="mrp_project_bom_component_tree_view" model="ir.ui.view">
-            <field name="name">project.mrp.bom.component.tree</field>
-            <field name="model">project.mrp.bom.line</field>
-            <field name="arch" type="xml">
-                <tree string="Components" editable="top">
-                    <field name="sequence" widget="handle"/>
-                    <field name="product_type_id"/>
-                    <field name="product_tmpl_id"/>
-                    <field name="partner_id"/>
-                    <field name="product_qty"/>
-                    <field name="price_unit"/>
-                    <field name="avg_price_unit"/>
-                    <field name="price_subtotal"/>
-                    <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
-                    <field name="attribute_value_ids"
-                           widget="many2many_tags"
-                           options="{'no_create': True}"
-                           domain="[('pav_attribute_line_ids.product_tmpl_id', '=', parent.product_tmpl_id)]"
-                           groups="product.group_product_variant" invisible="1"/>
-                    <field name="description"/>
-                    <button name="operation_bom_line" icon="fa-sliders" type="object"/>
-                    <button name="get_price" icon="fa-usd" type="object"/>
-<!--                    <field name="ready_for_bom"/>-->
-                    <field name="currency_id" invisible="1"/>
-                </tree>
-            </field>
-        </record>
-        <record id="view_mrp_bom_line_filter" model="ir.ui.view">
-            <field name="name">project.mrp.bom.line.select</field>
-            <field name="model">project.mrp.bom.line</field>
-            <field name="arch" type="xml">
-                <search string="Search Bill Of Material Components">
-                    <field name="project_bom_id"/>
-                    <field name="product_tmpl_id"/>
-                    <group expand="0" string="Group By...">
-                        <filter name="bom" string="Bill Of Material" domain="[]" context="{'group_by':'project_bom_id'}"/>
-                        <filter name="product" string="Product" domain="[]" context="{'group_by':'product_tmpl_id'}"/>
-                        <filter name="uom" string='Default Unit of Measure' domain="[]" context="{'group_by' : 'product_uom_id'}"/>
-                   </group>
-                </search>
-            </field>
-        </record>
-
-        <record id="project_mrp_bom_line_form_action" model="ir.actions.act_window">
-            <field name="name">Project materials - Bills of Materials</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">project.mrp.bom.line</field>
-            <field name="domain">[]</field> <!-- force empty -->
-            <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref="view_mrp_bom_line_filter"/>
-            <field name="help" type="html">
-              <p class="oe_view_nocontent_create">
-                Click to create a new project for material.
-              </p><p>
-                Bills of Materials allow you to define the list of required raw
-                materials used to make a finished product; through a manufacturing
-                order or a pack of products.
-              </p><p>
-                Odoo uses these BoMs to automatically propose work order
-                according to procurement needs.
-              </p>
-            </field>
-        </record>
-
         <!-- Bill of Materials -->
         <record id="project_mrp_bom_form_view" model="ir.ui.view">
             <field name="name">project.mrp.bom.form</field>
@@ -126,23 +29,11 @@
                                 class="oe_stat_button"
                                 string="Bom from materials"
                                 type="object" context="{'default_project_bom_id': active_id}"/>
-                            <button name="action_get_external_qty"
-                                icon="fa-cloud-download"
-                                class="oe_stat_button"
-                                string="Update qty"
-                                type="object"/>
                             <button name="store_standard_price"
                                 icon="fa-floppy-o"
                                 class="oe_stat_button"
                                 string="Store cost price"
                                 type="object"/>
-                            <button name="toggle_work_added" type="object"
-                                    class="oe_stat_button"
-                                    icon="fa fa-caret-square-o-down"
-                                    style="color: #008784 !important;">
-                                    <field name="work_added" widget="boolean_toggle"
-                                        options='{"terminology": {"string_true": "Adding", "hover_true": "ADDING", "string_false": "View", "hover_false": "VIEW"}}'/>
-                            </button>
                         </div>
                         <group>
                             <group>
@@ -173,30 +64,31 @@
                             <page string="Technical data">
                                 <field name="project_bom_line_ids">
                                     <tree string="Components" editable="top" limit="300">
+                                        <field name="project_bom_id" invisible="1"/>
                                         <field name="sequence" widget="handle"/>
-                                        <field name="product_type_id"/>
-                                        <field name="product_tmpl_id"/>
-                                        <field name="partner_id"/>
-                                        <field name="product_qty"/>
-                                        <field name="forecast_product_qty"/>
-                                        <field name="price_unit"/>
-                                        <field name="price_subtotal"/>
-                                        <field name="purchase_price_subtotal"/>
-                                        <field name="direct_price_subtotal" invisible="1"/>
-                                        <field name="product_uom_id" options="{'no_open':True,'no_create':True}" groups="uom.group_uom"/>
-                                        <field name="attribute_value_ids"
-                                               can_create="0"
-                                               widget="many2many_tags"
-                                               domain="[('pav_attribute_line_ids.product_tmpl_id', '=', parent.product_tmpl_id)]"
-                                               groups="product.group_product_variant"
-                                               invisible="1"/>
-                                        <field name="qty_available"/>
-                                        <field name="virtual_available"/>
-                                        <field name="remote_available" readonly="1" force_save="1"/>
-                                        <field name="description"/>
-                                        <button name="operation_bom_line" icon="fa-sliders" type="object"/>
-                                        <button name="get_price" icon="fa-usd" type="object"/>
-                                        <field name="currency_id" invisible="1"/>
+                                        <field name="project_product_id"/>
+                                        <field name="project_bom_id"/>
+                                        <field name="project_operation_id"/>
+                                        <field name="project_product_qty"/>
+                                        <field name="approve"/>
+<!--                                        <button name="operation_bom_line" icon="fa-sliders" type="object"/>-->
+<!--                                        <button name="get_price" icon="fa-usd" type="object"/>-->
+<!--                                        <field name="currency_id" invisible="1"/>-->
+                                    </tree>
+                                </field>
+                                <field name="note" class="oe_inline" placeholder="Write description ..."/>
+                                <div class="oe_clear"/>
+                            </page>
+                            <page string="Grouped data">
+                                <field name="project_bom_group_ids">
+                                    <tree string="Products" editable="top" limit="300">
+                                        <field name="product_type_id" readonly="1"/>
+                                        <field name="project_bom_id" invisible="1"/>
+                                        <field name="product_tmpl_id" readonly="1"/>
+                                        <field name="product_uom_id" readonly="1"/>
+                                        <field name="price_unit" readonly="1"/>
+                                        <field name="avg_price_unit"/>
+                                        <field name="attribute_value_ids" readonly="1"/>
                                     </tree>
                                 </field>
                                 <group class="oe_subtotal_footer oe_right">
@@ -213,8 +105,6 @@
                                            widget="monetary"
                                            options="{'currency_field': 'currency_id'}"/>
                                 </group>
-                                <field name="note" class="oe_inline" placeholder="Write description ..."/>
-                                <div class="oe_clear"/>
                             </page>
                             <page string="Miscellaneous">
                                 <group>
@@ -422,5 +312,6 @@
             <field name="name">Project - Bill of Materials</field>
             <field name="res_model">project.mrp.bom</field>
         </record>
+
     </data>
 </odoo>

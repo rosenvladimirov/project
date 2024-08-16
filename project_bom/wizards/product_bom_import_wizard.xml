@@ -10,8 +10,8 @@
               </p>
               <group>
                   <field name="product_id" readonly="1" force_save="1"/>
+                  <field name="product_tmpl_id" readonly="1" force_save="1"/>
                   <field name="default_code"/>
-                  <field name="use_remote"/>
                   <field name="project_bom_id" invisible="1"/>
               </group>
               <footer>
@@ -25,7 +25,6 @@
     <record id="act_open_wizard_product_template_import" model="ir.actions.act_window">
       <field name="name">Import Product Bom</field>
       <field name="res_model">product.bom.import</field>
-      <field name="view_type">form</field>
       <field name="view_mode">form</field>
       <field name="view_id" ref="product_bom_import_form_view"/>
       <field name="context">{'default_project_bom_id': active_id}</field>
@@ -36,7 +35,6 @@
     <record id="act_open_wizard_product_template_import_ext" model="ir.actions.act_window">
       <field name="name">Import Product Bom</field>
       <field name="res_model">product.bom.import</field>
-      <field name="view_type">form</field>
       <field name="view_mode">form</field>
       <field name="target">new</field>
       <field name="view_id" ref="product_bom_import_form_view"/>
